@@ -1,0 +1,34 @@
+{% extends "shop/base.html" %}
+{% block content %}
+<h2>Products</h2>
+
+<div class="product-grid">
+    {% for p in products %}
+    <div class="product-card">
+        <p>{{ p.photo.url }}</p>
+        {% if p.photo %}
+            <img src="{{ p.photo.url }}" alt="{{ p.name }}" class="product-image">
+        {% endif %}
+        
+        <h3>{{ p.name }}</h3>
+        <p class="price">{{ p.price }} USD</p>
+
+        {% if p.stock %}
+            <span class="stock in-stock">In Stock: {{ p.stock }}</span>
+        {% else %}
+            <span class="stock out-of-stock">Out of Stock</span>
+        {% endif %}
+
+        <form method="post" action="{% url 'product_detail' slug=p.slug %}">
+            {% csrf_token %}
+            <input type="number" name="quantity" value="1" min="1">
+            <button type="submit" class="btn">Add to Cart</button>
+        </form>
+
+        <a href="{% url 'product_detail' slug=p.slug %}" class="btn view-details">View Details</a>
+    </div>
+    {% empty %}
+        <p>No products available.</p>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "shop/base.html" %}
+{% block content %}
+<h2>Shopping cart</h2>
+{% if items %}
+  <table>
+    <thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th></tr></thead>
+    <tbody>
+    {% for it in items %}
+      <tr>
+        <td><a href="{% url 'product_detail' slug=it.product.slug %}">{{ it.product.name }}</a></td>
+        <td>{{ it.quantity }}</td>
+        <td>{{ it.subtotal }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total:</strong> {{ total }}</p>
+
+  {% if not paid %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Checkout (simulate)</button>
+    </form>
+  {% else %}
+    <p><strong>Thank you! Your order has been placed (simulated).</strong></p>
+  {% endif %}
+{% else %}
+  <p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}
