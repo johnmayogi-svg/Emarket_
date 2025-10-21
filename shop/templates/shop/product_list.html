@@ -1,34 +1,104 @@
 {% extends "shop/base.html" %}
+{% load static %}
+
 {% block content %}
 <h2>Products</h2>
 
 <div class="product-grid">
     {% for p in products %}
     <div class="product-card">
-        <p>{{ p.photo.url }}</p>
-        {% if p.photo %}
-            <img src="{{ p.photo.url }}" alt="{{ p.name }}" class="product-image">
-        {% endif %}
-        
-        <h3>{{ p.name }}</h3>
-        <p class="price">{{ p.price }} USD</p>
-
-        {% if p.stock %}
-            <span class="stock in-stock">In Stock: {{ p.stock }}</span>
+        {% if p.image %}
+            <img src="{{ p.image.url }}" alt="{{ p.name }}" class="product-image">
         {% else %}
-            <span class="stock out-of-stock">Out of Stock</span>
+            <img src="{% static 'images/no-image.png' %}" alt="No image available" class="product-image">
         {% endif %}
 
-        <form method="post" action="{% url 'product_detail' slug=p.slug %}">
-            {% csrf_token %}
-            <input type="number" name="quantity" value="1" min="1">
-            <button type="submit" class="btn">Add to Cart</button>
-        </form>
+        <h3 class="product-name">{{ p.name }}</h3>
 
-        <a href="{% url 'product_detail' slug=p.slug %}" class="btn view-details">View Details</a>
+        <div class="product-buttons">
+            <!-- Add to Cart -->
+            <form method="post" action="{% url 'add_to_cart' p.id %}" style="display:inline-block;">
+                {% csrf_token %}
+                <button type="submit" class="btn add-cart-btn">Add to Cart</button>
+            </form>
+
+            <!-- View Details -->
+            <a href="{% url 'product_detail' slug=p.slug %}" class="btn view-details-btn">View Details</a>
+        </div>
     </div>
     {% empty %}
         <p>No products available.</p>
     {% endfor %}
 </div>
+
+<style>
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: box-shadow 0.3s ease;
+    background-color: #fff;
+}
+
+.product-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.product-image {
+    max-width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.product-name {
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.product-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn {
+    padding: 10px 20px;   /* same size */
+    font-size: 14px;
+    min-width: 120px;     /* same width */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+/* Add to Cart - Orange */
+.add-cart-btn {
+    background-color: #ff7f50;
+}
+.add-cart-btn:hover {
+    background-color: #ff6347;
+}
+
+/* View Details - Purple */
+.view-details-btn {
+    background-color: #6a5acd;
+}
+.view-details-btn:hover {
+    background-color: #5a4dbf;
+}
+</style>
+
 {% endblock %}

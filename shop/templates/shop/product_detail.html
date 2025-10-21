@@ -1,30 +1,94 @@
 {% extends "shop/base.html" %}
+{% load static %}
+
 {% block content %}
+<h2>Product Detail</h2>
 
-<div class="product-card detail-card">
-    {% if product.photo %}
-        <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
-    {% endif %}
+<table class="product-table">
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>description</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Add to Cart</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" alt="No image available" class="product-image">
+                {% endif %}
+            </td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.description }}</td>
+            <td>${{ product.price }}</td>
+            <td>
+                <form method="post" action="{% url 'add_to_cart' product.id %}" class="cart-form">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="1" min="1" class="quantity-input">
+            </td>
+            <td>
+                    <button type="submit" class="btn add-cart-btn">Add to Cart</button>
+                </form>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
-    <h2>{{ product.name }}</h2>
-    <p class="price">{{ product.price }} USD</p>
+<!-- CSS for table layout -->
+<style>
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
 
-    {% if product.stock %}
-        <span class="stock in-stock">In Stock: {{ product.stock }}</span>
-    {% else %}
-        <span class="stock out-of-stock">Out of Stock</span>
-    {% endif %}
+.product-table th,
+.product-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
+}
 
-    <p class="description">{{ product.description }}</p>
+.product-table th {
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.quantity.label_tag }} 
-        {{ form.quantity }}
-        <button type="submit" class="btn">Add to Cart</button>
-    </form>
+.product-image {
+    max-width: 100px;
+    height: auto;
+    border-radius: 5px;
+}
 
-    <a href="{% url 'cart' %}" class="btn view-details view-cart">View Cart</a>
-</div>
+.quantity-input {
+    width: 60px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
 
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+}
+
+.add-cart-btn {
+    background-color: #28a745;
+}
+
+.add-cart-btn:hover {
+    background-color: #218838;
+}
+</style>
 {% endblock %}
