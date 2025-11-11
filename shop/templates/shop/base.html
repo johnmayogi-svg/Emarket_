@@ -186,7 +186,7 @@
 
         {% if user.is_authenticated %}
             <a href="{% url 'my_orders' %}">My Orders</a>
-            <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+            <a href="{% url 'login' %}" class="logout-btn">Logout</a>
         {% else %}
             <a href="{% url 'login' %}">Login</a>
             <a href="{% url 'register' %}">Register</a>
