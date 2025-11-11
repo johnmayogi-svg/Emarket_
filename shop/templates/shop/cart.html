@@ -52,12 +52,13 @@
     <div class="cart-summary">
       <p><strong>Total:</strong> $<span id="total">{{ total }}</span></p>
       <button type="submit" name="update_cart" class="update-btn">Update Cart</button>
-      <button type="submit" name="checkout" class="checkout-btn">Place Order</button>
+      <button type="submit" formaction="{% url 'checkout' %}" class="checkout-btn">Checkout</button>
     </div>
   </form>
 </div>
 {% else %}
   <p class="empty-cart">Your cart is empty.</p>
+  <a href="{% url 'product_list' %}" class="btn checkout-btn">Continue Shopping</a>
 {% endif %}
 
 <script>

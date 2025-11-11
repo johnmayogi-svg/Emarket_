@@ -1,0 +1,120 @@
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>My Orders</h2>
+
+{% if orders %}
+  <div class="orders-container">
+    {% for order in orders %}
+      <div class="order-card">
+        <div class="order-header">
+          <h3>Order #{{ order.id }} - {{ order.created_at|date:"M d, Y H:i" }}</h3>
+          <p>
+            <strong>Status:</strong>
+            <span class="status-badge {{ order.status|lower }}">{{ order.status }}</span>
+          </p>
+        </div>
+
+        <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+        <p><strong>Email:</strong> {{ order.customer_email }}</p>
+        <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+        
+        <table class="order-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.items.all %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.price }}</td>
+                <td>${{ item.get_total }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <p class="order-total">Total: ${{ order.get_total }}</p>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>You have no orders yet.</p>
+{% endif %}
+
+<style>
+/* Container for all orders */
+.orders-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Individual order card */
+.order-card {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Header with status */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Order table */
+.order-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.order-table th,
+.order-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.order-table th {
+    background: #f5f5f5;
+}
+
+/* Total text */
+.order-total {
+    text-align: right;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Status badges */
+.status-badge {
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    text-transform: capitalize;
+}
+
+/* Status-specific colors */
+.status-badge.pending { background-color: orange; }
+.status-badge.processing { background-color: blue; }
+.status-badge.shipped { background-color: purple; }
+.status-badge.delivered { background-color: green; }
+.status-badge.cancelled { background-color: red; }
+
+</style>
+{% endblock %}

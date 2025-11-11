@@ -1,0 +1,30 @@
+{% extends "shop/base.html" %}
+{% block content %}
+<h2>Order Placed Successfully!</h2>
+<p>Thank you, {{ order.customer_name }}. Your order (ID: {{ order.id }}) has been placed.</p>
+<a href="{% url 'product_list' %}" class="btn">Back to Shop</a>
+
+<style>
+h2 {
+  text-align: center;
+  color: #28a745;
+  margin-top: 30px;
+}
+p {
+  text-align: center;
+  font-size: 18px;
+}
+.btn {
+  display: block;
+  margin: 20px auto;
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.btn:hover {
+  background-color: #0056b3;
+}
+</style>
+{% endblock %}

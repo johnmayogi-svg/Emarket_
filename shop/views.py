@@ -1,92 +1,197 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Product
-from .forms import AddToCartForm
-from django.urls import reverse
+from django.contrib import messages
 from decimal import Decimal
+from django.http import JsonResponse
+from .forms import AddToCartForm
+from .models import Product, Order, OrderItem
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth.models import User
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 
+def home_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('product_list')
+    return redirect('login')
+
+@login_required(login_url='login')
 def product_list(request):
     products = Product.objects.all().order_by("-created")
     return render(request, "shop/product_list.html", {"products": products})
 
+
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug)
     form = AddToCartForm(request.POST or None)
+
     if request.method == "POST" and form.is_valid():
         qty = form.cleaned_data["quantity"]
         cart = request.session.get("cart", {})
-        pid = str(product.id)
-        cart[pid] = cart.get(pid, 0) + qty
+        cart[str(product.id)] = cart.get(str(product.id), 0) + qty
         request.session["cart"] = cart
-        return redirect("cart")
+        request.session.modified = True
+
+        messages.success(request, f"{product.name} added to your cart!")
+        return redirect("product_list")
+
     return render(request, "shop/product_detail.html", {"product": product, "form": form})
 
-    # Handle checkout
-    if request.method == "POST" and "checkout" in request.POST:
-        request.session["cart"] = {}
-        return render(request, "shop/cart.html", {"items": [], "total": 0, "paid": True})
 
-    # Build items for display
-    for p in products:
-        qty = cart.get(str(p.id), 0)
-        subtotal = p.price * qty
-        items.append({"product": p, "quantity": qty, "subtotal": subtotal})
-        total += subtotal
-
-    return render(request, "shop/cart.html", {"items": items, "total": total, "paid": False})
-
+# -------------------------------
+# Cart Views
+# -------------------------------
 def add_to_cart(request, product_id):
-    """
-    Adds a product to the session-based cart.
-    """
     if request.method == "POST":
         product = get_object_or_404(Product, id=product_id)
-        quantity = int(request.POST.get("quantity", 1))
-        
-        # Get existing cart from session
-        cart = request.session.get("cart", {})
-        
-        # Update quantity if product is already in cart
-        if str(product_id) in cart:
-            cart[str(product_id)] += quantity
-        else:
-            cart[str(product_id)] = quantity
-        
-        # Save back to session
-        request.session["cart"] = cart
+        try:
+            quantity = int(request.POST.get("quantity", 1))
+            quantity = max(quantity, 1)
+        except ValueError:
+            quantity = 1
 
-    # Redirect to cart page after adding
-    return redirect("cart")
+        cart = request.session.get("cart", {})
+        cart[str(product_id)] = cart.get(str(product_id), 0) + quantity
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"success": True, "cart_count": sum(cart.values())})
+
+        messages.success(request, f"{product.name} added to your cart!")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    return redirect("product_list")
+
 
 def cart_view(request):
     cart = request.session.get("cart", {})
-    product_ids = cart.keys()
-    products = Product.objects.filter(id__in=product_ids)
     items = []
     total = Decimal("0.00")
 
-    # Handle quantity updates
-    if request.method == "POST" and "update_cart" in request.POST:
+    if cart:
+        products = Product.objects.filter(id__in=cart.keys())
+        for product in products:
+            qty = cart.get(str(product.id), 0)
+            subtotal = product.price * qty
+            total += subtotal
+            items.append({
+                "product": product,
+                "quantity": qty,
+                "subtotal": subtotal
+            })
+
+        # Handle quantity updates
+        if request.method == "POST" and "update_cart" in request.POST:
+            for product in products:
+                key = f"quantity_{product.id}"
+                try:
+                    new_qty = int(request.POST.get(key, cart.get(str(product.id), 1)))
+                    if new_qty > 0:
+                        cart[str(product.id)] = new_qty
+                    else:
+                        cart.pop(str(product.id), None)
+                except ValueError:
+                    continue
+
+            request.session["cart"] = cart
+            request.session.modified = True
+
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "total": float(total)})
+
+            messages.success(request, "Cart updated successfully!")
+            return redirect("cart")
+
+    return render(request, "shop/cart.html", {"items": items, "total": total})
+
+
+# -------------------------------
+# Checkout View
+# -------------------------------
+@login_required(login_url='login')
+def checkout(request):
+    cart = request.session.get("cart", {})
+    if not cart:
+        messages.info(request, "Your cart is empty.")
+        return redirect("product_list")
+
+    products = Product.objects.filter(id__in=cart.keys())
+    items = []
+    total = Decimal("0.00")
+
+    if request.method == "POST" and "name" in request.POST and "email" in request.POST and "phone" in request.POST:
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        phone = request.POST.get("phone")  # <-- new
+
+        # Update session quantities if form allows editing
         for p in products:
-            qty_key = f"quantity_{p.id}"
-            new_qty = int(request.POST.get(qty_key, cart.get(str(p.id), 1)))
-            if new_qty > 0:
-                cart[str(p.id)] = new_qty
-            else:
-                cart.pop(str(p.id), None)
+            qty_str = request.POST.get(f"quantity_{p.id}")
+            if qty_str:
+                cart[str(p.id)] = int(qty_str)
         request.session["cart"] = cart
-        return redirect("cart")  # reload with updated quantities
 
-    # Handle checkout
-    if request.method == "POST" and "checkout" in request.POST:
+        # Create order linked to logged-in user
+        order = Order.objects.create(
+            user=request.user,
+            customer_name=name,
+            customer_email=email,
+            customer_phone=phone,  # <-- save phone
+        )
+
+        # Create order items
+        for p in products:
+            qty = cart.get(str(p.id), 1)
+            OrderItem.objects.create(
+                order=order,
+                product=p,
+                quantity=qty,
+                price=p.price,
+            )
+
+        # Clear cart after order
         request.session["cart"] = {}
-        return render(request, "shop/cart.html", {"items": [], "total": 0, "paid": True})
+        messages.success(request, "Your order has been placed successfully!")
+        return render(request, "shop/order_success.html", {"order": order})
 
-    # Build items for display
+    # Build display data for the form
     for p in products:
         qty = cart.get(str(p.id), 0)
         subtotal = p.price * qty
-        items.append({"product": p, "quantity": qty, "subtotal": subtotal})
         total += subtotal
+        items.append({"product": p, "quantity": qty, "subtotal": subtotal})
 
-    return render(request, "shop/cart.html", {"items": items, "total": total, "paid": False})
+    return render(request, "shop/checkout.html", {"items": items, "total": total})
 
+# -------------------------------
+# User Registration
+# -------------------------------
+def register(request):
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password1")
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            messages.success(request, f"Account created for {username}!")
+            return redirect("product_list")
+    else:
+        form = UserCreationForm()
+    return render(request, "shop/register.html", {"form": form})
+
+@login_required(login_url='login')
+def order_status(request):
+    # Get all orders of the current user, newest first
+    orders = request.user.orders.all().order_by('-created_at')
+    return render(request, 'shop/order_status.html', {'orders': orders})
+
+@login_required(login_url='login')
+def my_orders(request):
+    # Show orders from the last 7 days
+    expiry_date = timezone.now() - timedelta(days=7)
+    orders = request.user.orders.filter(created_at__gte=expiry_date).order_by('-created_at')
+    return render(request, "shop/my_orders.html", {"orders": orders})

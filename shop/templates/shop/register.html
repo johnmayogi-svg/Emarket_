@@ -1,0 +1,97 @@
+
+<style>
+/* Inline form styling (can move to CSS later) */
+.register-container {
+    max-width: 420px;
+    margin: 60px auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 35px 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.register-container h2 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 25px;
+}
+.register-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.register-container label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+.register-container input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+}
+.register-container input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 3px rgba(0,123,255,0.5);
+}
+.register-container button {
+    background: #28a745;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.register-container button:hover {
+    background: #218838;
+}
+.register-container p {
+    text-align: center;
+    margin-top: 10px;
+}
+.register-container a {
+    color: #007bff;
+}
+.register-container .messages {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+</style>
+
+<div class="register-container">
+    <h2>Create an Account</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="messages">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Render fields manually for cleaner layout -->
+        <label for="id_username">Username</label>
+        {{ form.username }}
+
+        <label for="id_password1">Password</label>
+        {{ form.password1 }}
+
+        <label for="id_password2">Confirm Password</label>
+        {{ form.password2 }}
+
+        <button type="submit">Register</button>
+    </form>
+
+    <p>Already have an account?
+        <a href="{% url 'login' %}">Login here</a>
+    </p>
+</div>

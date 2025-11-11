@@ -9,7 +9,7 @@
         <tr>
             <th>Image</th>
             <th>Name</th>
-            <th>description</th>
+            <th>Description</th>
             <th>Price</th>
             <th>Quantity</th>
             <th>Add to Cart</th>
@@ -28,7 +28,8 @@
             <td>{{ product.description }}</td>
             <td>${{ product.price }}</td>
             <td>
-                <form method="post" action="{% url 'add_to_cart' product.id %}" class="cart-form">
+
+                <form method="post" class="cart-form">
                     {% csrf_token %}
                     <input type="number" name="quantity" value="1" min="1" class="quantity-input">
             </td>
