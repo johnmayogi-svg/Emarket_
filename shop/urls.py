@@ -13,10 +13,10 @@ urlpatterns = [
     path('cart/add/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('my_orders/', views.my_orders, name='my_orders'),
-    path('order_status/', views.order_status, name='order_status'),
-
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     # Auth routes
     path('login/', auth_views.LoginView.as_view(template_name='shop/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('register/', views.register, name='register'),
 ]
+

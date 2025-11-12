@@ -10,6 +10,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+from django.db import models
 
 def home_redirect(request):
     if request.user.is_authenticated:
@@ -183,15 +185,50 @@ def register(request):
         form = UserCreationForm()
     return render(request, "shop/register.html", {"form": form})
 
-@login_required(login_url='login')
-def order_status(request):
-    # Get all orders of the current user, newest first
-    orders = request.user.orders.all().order_by('-created_at')
-    return render(request, 'shop/order_status.html', {'orders': orders})
+
+def is_admin(user):
+    return user.is_superuser
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    products = Product.objects.all()
+    orders = Order.objects.all()
+    order_items = OrderItem.objects.all()
+
+    # Basic stats
+    total_products = products.count()
+    total_orders = orders.count()
+    total_sales = sum(order.get_total() for order in orders)
+
+    # Orders by status
+    orders_by_status = {
+        status: orders.filter(status=status).count()
+        for status, _ in Order.STATUS_CHOICES
+    }
+
+    # Top 5 best-selling products (by quantity sold)
+    product_sales = (
+        order_items
+        .values('product__name')
+        .annotate(total_quantity=models.Sum('quantity'))
+        .order_by('-total_quantity')[:5]
+    )
+
+    context = {
+        "total_products": total_products,
+        "total_orders": total_orders,
+        "total_sales": total_sales,
+        "orders_by_status": orders_by_status,
+        "product_sales": product_sales,
+        "recent_orders": orders.order_by('-created_at')[:10],  # latest 10 orders
+    }
+
+    return render(request, "shop/admin_dashboard.html", context)
 
 @login_required(login_url='login')
 def my_orders(request):
-    # Show orders from the last 7 days
-    expiry_date = timezone.now() - timedelta(days=7)
-    orders = request.user.orders.filter(created_at__gte=expiry_date).order_by('-created_at')
+    """
+    Display all orders for the currently logged-in user.
+    """
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, "shop/my_orders.html", {"orders": orders})

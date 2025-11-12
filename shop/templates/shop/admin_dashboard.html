@@ -1,0 +1,107 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+
+<!-- Summary Cards -->
+<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+    <div style="flex: 1; min-width: 150px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px;">
+        <h3>Total Products</h3>
+        <p>{{ total_products }}</p>
+    </div>
+    <div style="flex: 1; min-width: 150px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px;">
+        <h3>Total Orders</h3>
+        <p>{{ total_orders }}</p>
+    </div>
+    <div style="flex: 1; min-width: 150px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px;">
+        <h3>Total Sales</h3>
+        <p>${{ total_sales }}</p>
+    </div>
+</div>
+
+<!-- Orders by Status -->
+<h2>Orders by Status</h2>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for status, count in orders_by_status.items %}
+        <tr>
+            <td>{{ status }}</td>
+            <td>{{ count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Top 5 Best-selling Products -->
+<h2>Top 5 Best-selling Products</h2>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Quantity Sold</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in top_products %}
+        <tr>
+            <td>{{ product.product__name }}</td>
+            <td>{{ product.total_qty }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Recent Orders -->
+<h2>Recent Orders</h2>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in recent_orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td>{{ order.customer_email }}</td>
+            <td>{{ order.customer_phone }}</td>
+            <td>{{ order.status }}</td>
+            <td>${{ order.get_total }}</td>
+            <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<style>
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+.admin-table th, .admin-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+.admin-table th {
+    background-color: #f1f1f1;
+    text-align: left;
+}
+</style>
+{% endblock %}
