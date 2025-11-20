@@ -14,6 +14,7 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('my_orders/', views.my_orders, name='my_orders'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    
     # Auth routes
     path('login/', auth_views.LoginView.as_view(template_name='shop/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
